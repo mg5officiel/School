@@ -1,0 +1,1 @@
+package ml.school.dto.auth; public record AuthResponse(String accessToken,String refreshToken,long expiresInSeconds){}
