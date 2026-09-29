@@ -1,0 +1,1 @@
+package ml.school.repository; import ml.school.entity.PersonnelAdministratif; import org.springframework.data.jpa.repository.JpaRepository; public interface PersonnelAdministratifRepository extends JpaRepository<PersonnelAdministratif,Long>{}
