@@ -1,5 +1,6 @@
 package ml.school.service;
 
+import ml.school.audit.AuditService;
 import ml.school.dto.auth.AuthResponse;
 import ml.school.dto.auth.LoginRequest;
 import ml.school.entity.Role;
@@ -22,6 +23,7 @@ class AuthServiceTest {
         PasswordEncoder encoder = mock(PasswordEncoder.class);
         JwtService jwt = mock(JwtService.class);
         RefreshTokenService refresh = mock(RefreshTokenService.class);
+        AuditService audit = mock(AuditService.class);
 
         Utilisateur user = new Utilisateur();
         user.setUsername("admin");
@@ -34,7 +36,7 @@ class AuthServiceTest {
         when(jwt.accessToken("admin", "ADMIN", 900)).thenReturn("access");
         when(refresh.create(user, 7)).thenReturn("refresh");
 
-        AuthService service = new AuthService(users, encoder, jwt, refresh);
+        AuthService service = new AuthService(users, encoder, jwt, refresh, audit);
         AuthResponse response = service.login(new LoginRequest("admin", "secret"));
 
         assertEquals("access", response.accessToken());
