@@ -26,6 +26,7 @@ export const api={
   post:(path,body)=>request(path,{method:"POST",body:body instanceof FormData?body:JSON.stringify(body)}),
   put:(path,body)=>request(path,{method:"PUT",body:JSON.stringify(body)}),
   del:path=>request(path,{method:"DELETE"}),
-  download:async path=>{const t=token();const r=await fetch(API_URL+path,{headers:t?{Authorization:"Bearer "+t}:{}});if(!r.ok)throw new Error("Téléchargement impossible");return r.blob()}
+  logout:async()=>{const refresh=localStorage.getItem("refreshToken");if(refresh){try{await request("/auth/logout",{method:"POST",body:JSON.stringify({refreshToken:refresh})})}catch{}}localStorage.clear()},
+  download:async path=>{let t=token();let r=await fetch(API_URL+path,{headers:t?{Authorization:"Bearer "+t}:{}});if(r.status===401){const refresh=localStorage.getItem("refreshToken");if(refresh){const rr=await fetch(API_URL+"/auth/refresh",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({refreshToken:refresh})});if(rr.ok){const d=await rr.json();localStorage.setItem("accessToken",d.accessToken);if(d.refreshToken)localStorage.setItem("refreshToken",d.refreshToken);t=d.accessToken;r=await fetch(API_URL+path,{headers:{Authorization:"Bearer "+t}})}}}if(!r.ok)throw new Error("Téléchargement impossible");return r.blob()}
 };
 export {API_URL};
