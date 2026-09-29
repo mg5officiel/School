@@ -1,0 +1,1 @@
+package ml.school.repository; import ml.school.entity.Paiement; import org.springframework.data.jpa.repository.JpaRepository; public interface PaiementRepository extends JpaRepository<Paiement,Long>{}
