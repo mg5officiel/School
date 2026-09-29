@@ -1,7 +1,6 @@
 package ml.school.controller;
 
 import jakarta.validation.Valid;
-package ml.school.controller;
 import ml.school.entity.*; import ml.school.repository.*; import org.springframework.web.bind.annotation.*; import java.util.*;
 @RestController @RequestMapping("/api/eleves") class EleveController {private final EleveRepository r; EleveController(EleveRepository r){this.r=r;} @GetMapping List<Eleve> all(){return r.findAll();}@GetMapping("/{id}") Eleve one(@PathVariable Long id){return r.findById(id).orElseThrow();}@PostMapping Eleve add(@Valid @RequestBody Eleve x){return r.save(x);}@PutMapping("/{id}") Eleve edit(@PathVariable Long id,@Valid @RequestBody Eleve x){x.setId(id);return r.save(x);}@DeleteMapping("/{id}")void del(@PathVariable Long id){r.deleteById(id);}}
 @RestController @RequestMapping("/api/classes") class ClasseController {private final ClasseRepository r; ClasseController(ClasseRepository r){this.r=r;} @GetMapping List<Classe> all(){return r.findAll();}@PostMapping Classe add(@Valid @RequestBody Classe x){return r.save(x);}@PutMapping("/{id}") Classe edit(@PathVariable Long id,@Valid @RequestBody Classe x){x.setId(id);return r.save(x);}@DeleteMapping("/{id}")void del(@PathVariable Long id){r.deleteById(id);}}
