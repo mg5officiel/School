@@ -1,3 +1,5 @@
+package ml.school.controller;
+
 import jakarta.validation.Valid;
 package ml.school.controller;
 import ml.school.entity.*; import ml.school.repository.*; import org.springframework.web.bind.annotation.*; import java.util.*;
