@@ -1,0 +1,1 @@
+package ml.school.repository; import ml.school.entity.Note; import org.springframework.data.jpa.repository.JpaRepository; public interface NoteRepository extends JpaRepository<Note,Long>{}
