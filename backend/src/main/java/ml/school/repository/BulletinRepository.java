@@ -1,0 +1,1 @@
+package ml.school.repository; import ml.school.entity.Bulletin; import org.springframework.data.jpa.repository.JpaRepository; public interface BulletinRepository extends JpaRepository<Bulletin,Long>{}
