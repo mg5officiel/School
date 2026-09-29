@@ -1,0 +1,2 @@
+package ml.school.audit; import ml.school.entity.AuditLog; import ml.school.repository.AuditLogRepository; import org.springframework.stereotype.Service; import java.time.Instant;
+@Service public class AuditService { private final AuditLogRepository repo; public AuditService(AuditLogRepository r){repo=r;} public void log(String action,String username,String cible,String details){AuditLog a=new AuditLog();a.setDateHeure(Instant.now());a.setAction(action);a.setUsername(username);a.setCible(cible);a.setDetails(details);repo.save(a);} }
