@@ -1,0 +1,1 @@
+package ml.school.repository; import ml.school.entity.EmploiDuTemps; import org.springframework.data.jpa.repository.JpaRepository; public interface EmploiDuTempsRepository extends JpaRepository<EmploiDuTemps,Long>{}
