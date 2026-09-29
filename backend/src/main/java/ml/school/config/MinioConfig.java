@@ -1,0 +1,3 @@
+package ml.school.config;
+import io.minio.MinioClient; import org.springframework.beans.factory.annotation.Value; import org.springframework.context.annotation.*;
+@Configuration public class MinioConfig { @Bean MinioClient minioClient(@Value("${minio.endpoint}") String e,@Value("${minio.access-key}") String a,@Value("${minio.secret-key}") String s){return MinioClient.builder().endpoint(e).credentials(a,s).build();} }
