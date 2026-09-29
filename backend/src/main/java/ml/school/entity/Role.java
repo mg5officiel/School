@@ -1,0 +1,2 @@
+package ml.school.entity;
+public enum Role { ADMIN, PROVISEUR, ENSEIGNANT, SURVEILLANT, COMPTABLE, SECRETAIRE, SCENCEUR }
