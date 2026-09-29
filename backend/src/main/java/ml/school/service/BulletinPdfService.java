@@ -4,16 +4,12 @@ import lombok.RequiredArgsConstructor;
 import ml.school.audit.AuditService;
 import ml.school.entity.Bulletin;
 import ml.school.entity.Note;
+import ml.school.entity.Trimestre;
+import ml.school.entity.TypeEvaluation;
 import ml.school.repository.BulletinRepository;
 import ml.school.repository.NoteRepository;
-import org.openpdf.text.Document;
-import org.openpdf.text.Element;
-import org.openpdf.text.Font;
-import org.openpdf.text.FontFactory;
-import org.openpdf.text.Paragraph;
-import org.openpdf.text.pdf.PdfPCell;
-import org.openpdf.text.pdf.PdfPTable;
-import org.openpdf.text.pdf.PdfWriter;
+import org.openpdf.text.*;
+import org.openpdf.text.pdf.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,12 +28,12 @@ public class BulletinPdfService {
         Bulletin bulletin = bulletinRepository.findById(bulletinId)
                 .orElseThrow(() -> new IllegalArgumentException("Bulletin introuvable"));
 
-        if (!bulletin.isAnnuel()) {
-            throw new IllegalArgumentException("Le téléchargement PDF est réservé aux bulletins annuels");
-        }
-
-        List<Note> notes = noteRepository.findByEleveAndEvaluation_AnneeScolaire(
-                bulletin.getEleve(), bulletin.getAnneeScolaire());
+        List<Note> notes = bulletin.isAnnuel()
+                ? noteRepository.findByEleveAndEvaluation_AnneeScolaireAndEvaluation_TypeEvaluation(
+                        bulletin.getEleve(), bulletin.getAnneeScolaire(), TypeEvaluation.NOTE_TRIMESTRIELLE)
+                : noteRepository.findByEleveAndEvaluation_AnneeScolaireAndEvaluation_TypeEvaluationAndEvaluation_Trimestre(
+                        bulletin.getEleve(), bulletin.getAnneeScolaire(),
+                        TypeEvaluation.NOTE_TRIMESTRIELLE, bulletin.getTrimestre());
 
         try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             Document document = new Document();
@@ -68,7 +64,9 @@ public class BulletinPdfService {
             info.addCell(cell("Classe", bold));
             info.addCell(cell(bulletin.getClasse().getNom() + " (" + bulletin.getClasse().getNiveau() + ")", normal));
             info.addCell(cell("Type", bold));
-            info.addCell(cell("Bulletin annuel", normal));
+            info.addCell(cell(bulletin.isAnnuel()
+                    ? "Bulletin annuel"
+                    : libelleTrimestre(bulletin.getTrimestre()), normal));
             document.add(info);
             document.add(new Paragraph(" "));
             document.add(new Paragraph("Résultats", bold));
@@ -91,7 +89,7 @@ public class BulletinPdfService {
 
             if (notes.isEmpty()) {
                 PdfPCell empty = new PdfPCell(new Paragraph(
-                        "Aucune note enregistrée pour cette année scolaire.", normal));
+                        "Aucune note trimestrielle enregistrée pour cette période.", normal));
                 empty.setColspan(4);
                 table.addCell(empty);
             }
@@ -101,7 +99,7 @@ public class BulletinPdfService {
             PdfPTable average = new PdfPTable(2);
             average.setWidthPercentage(60);
             average.setHorizontalAlignment(Element.ALIGN_RIGHT);
-            average.addCell(cell("Moyenne annuelle", bold));
+            average.addCell(cell(bulletin.isAnnuel() ? "Moyenne annuelle" : "Moyenne du trimestre", bold));
             average.addCell(cell(bulletin.getMoyenne().toPlainString() + "/20", bold));
             document.add(average);
 
@@ -112,7 +110,10 @@ public class BulletinPdfService {
             document.close();
 
             auditService.log("DOWNLOAD_BULLETIN_PDF", username,
-                    "Bulletin#" + bulletinId, "Téléchargement du bulletin annuel PDF");
+                    "Bulletin#" + bulletinId,
+                    "Téléchargement du " + (bulletin.isAnnuel()
+                            ? "bulletin annuel"
+                            : libelleTrimestre(bulletin.getTrimestre())) + " PDF");
 
             return output.toByteArray();
         } catch (Exception e) {
@@ -128,5 +129,13 @@ public class BulletinPdfService {
 
     private String safe(String value) {
         return value == null || value.isBlank() ? "-" : value;
+    }
+
+    private String libelleTrimestre(Trimestre trimestre) {
+        return switch (trimestre) {
+            case PREMIER -> "Bulletin du 1er trimestre";
+            case DEUXIEME -> "Bulletin du 2e trimestre";
+            case TROISIEME -> "Bulletin du 3e trimestre";
+        };
     }
 }
