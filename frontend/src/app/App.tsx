@@ -1,93 +1,46 @@
-import React, { useState } from 'react';
-import { AppProvider, useApp } from './context/AppContext';
-import { Login } from './components/Login';
-import { Sidebar } from './components/Sidebar';
-import { TopBar } from './components/TopBar';
-import { Dashboard } from './components/Dashboard';
-import { Eleves } from './components/Eleves';
-import { EleveDetails } from './components/EleveDetails';
-import { EmploiDuTemps } from './components/EmploiDuTemps';
-import { Bulletins } from './components/Bulletins';
-import { Utilisateurs } from './components/Utilisateurs';
-import { Parametres } from './components/Parametres';
-import { AnneesScolaires } from './components/AnneesScolaires';
-import { ImportExport } from './components/ImportExport';
-import { Profil } from './components/Profil';
-import { Eleve } from './types';
+import React,{useEffect,useState}from"react";
+import{GraduationCap,LogOut,LayoutDashboard,Users,BookOpen,FileText,CalendarDays,WalletCards,ClipboardCheck,ArrowRightLeft,Upload,UserRoundCog,BookMarked,Plus,Pencil,Trash2,Download,Menu}from"lucide-react";
+import{api}from"./api";
 
-const AppContent: React.FC = () => {
-  const { state } = useApp();
-  const [currentView, setCurrentView] = useState('dashboard');
-  const [selectedEleve, setSelectedEleve] = useState<Eleve | null>(null);
+const ROLES=["ADMIN","PROVISEUR","ENSEIGNANT","SURVEILLANT","COMPTABLE","SECRETAIRE","SCENCEUR"];
+const labels={ADMIN:"Administrateur",PROVISEUR:"Proviseur",ENSEIGNANT:"Enseignant",SURVEILLANT:"Surveillant",COMPTABLE:"Comptable",SECRETAIRE:"Secrétaire",SCENCEUR:"Scenceur"};
+const A={eleves:[["ADMIN","PROVISEUR","SECRETAIRE"],["ADMIN","PROVISEUR"]],classes:[["ADMIN","PROVISEUR"],["ADMIN","PROVISEUR"]],annees:[["ADMIN","PROVISEUR"],["ADMIN"]],filieres:[["ADMIN","PROVISEUR"],["ADMIN","PROVISEUR"]],enseignants:[["ADMIN","PROVISEUR","SECRETAIRE"],["ADMIN","PROVISEUR"]],matieres:[["ADMIN","PROVISEUR"],["ADMIN","PROVISEUR"]],inscriptions:[["ADMIN","PROVISEUR","SECRETAIRE"],["ADMIN","PROVISEUR"]],notes:[["ADMIN","PROVISEUR","ENSEIGNANT"],["ADMIN","PROVISEUR"]],evaluations:[["ADMIN","PROVISEUR","ENSEIGNANT"],["ADMIN","PROVISEUR","ENSEIGNANT"]],bulletins:[["ADMIN","PROVISEUR"],["ADMIN","PROVISEUR"]],absences:[["ADMIN","PROVISEUR","ENSEIGNANT","SURVEILLANT","SCENCEUR"],["ADMIN","PROVISEUR","SURVEILLANT","SCENCEUR"]],paiements:[["ADMIN","COMPTABLE"],["ADMIN"]],personnels:[["ADMIN","PROVISEUR"],["ADMIN","PROVISEUR"]],cours:[["ADMIN","PROVISEUR"],["ADMIN","PROVISEUR"]],emplois:[["ADMIN","PROVISEUR"],["ADMIN","PROVISEUR"]],utilisateurs:[["ADMIN"],["ADMIN"]]};
 
-  if (!state.currentUser) {
-    return <Login />;
-  }
-
-  const getViewTitle = () => {
-    const titles: { [key: string]: string } = {
-      dashboard: 'Tableau de bord',
-      eleves: 'Gestion des élèves',
-      'emploi-du-temps': 'Emploi du temps',
-      bulletins: 'Bulletins scolaires',
-      utilisateurs: 'Gestion des utilisateurs',
-      parametres: 'Paramètres',
-      annees: 'Années scolaires',
-      'import-export': 'Import / Export',
-      profil: 'Mon profil',
-    };
-    return selectedEleve ? 'Détails de l\'élève' : titles[currentView] || 'Tableau de bord';
-  };
-
-  const renderView = () => {
-    if (selectedEleve) {
-      return <EleveDetails eleve={selectedEleve} onBack={() => setSelectedEleve(null)} />;
-    }
-
-    switch (currentView) {
-      case 'dashboard':
-        return <Dashboard />;
-      case 'eleves':
-        return <Eleves onViewDetails={setSelectedEleve} />;
-      case 'emploi-du-temps':
-        return <EmploiDuTemps />;
-      case 'bulletins':
-        return <Bulletins />;
-      case 'utilisateurs':
-        return <Utilisateurs />;
-      case 'parametres':
-        return <Parametres />;
-      case 'annees':
-        return <AnneesScolaires />;
-      case 'import-export':
-        return <ImportExport />;
-      case 'profil':
-        return <Profil />;
-      default:
-        return <Dashboard />;
-    }
-  };
-
-  return (
-    <div className="flex h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden">
-      <Sidebar currentView={currentView} onViewChange={(view) => {
-        setCurrentView(view);
-        setSelectedEleve(null);
-      }} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <TopBar title={getViewTitle()} />
-        <main className="flex-1 overflow-y-auto">
-          {renderView()}
-        </main>
-      </div>
-    </div>
-  );
+const R={
+eleves:["Élèves","/api/eleves",[["prenom","Prénom"],["nom","Nom"],["matricule","Matricule"],["sexe","Sexe","select",["HOMME","FEMME"]],["telephone","Téléphone"],["parent","Parent","rel","/api/parents"]],["prenom","nom","matricule","sexe"]],
+classes:["Classes","/api/classes",[["nom","Nom"],["niveau","Niveau"]],["nom","niveau"]],
+annees:["Années scolaires","/api/annees-scolaires",[["libelle","Libellé"],["active","Active","bool"]],["libelle","active"]],
+filieres:["Filières","/api/filieres",[["code","Code"],["nom","Nom"]],["code","nom"]],
+enseignants:["Enseignants","/api/enseignants",[["prenom","Prénom"],["nom","Nom"],["telephone","Téléphone"]],["prenom","nom","telephone"]],
+matieres:["Matières","/api/matieres",[["nom","Nom"],["code","Code"],["coefficient","Coefficient","num"],["niveau","Niveau"],["filiere","Filière","rel","/api/filieres"]],["nom","code","coefficient","niveau"]],
+inscriptions:["Inscriptions","/api/inscriptions",[["eleve","Élève","rel","/api/eleves"],["classe","Classe","rel","/api/classes"],["anneeScolaire","Année","rel","/api/annees-scolaires"],["redoublant","Redoublant","bool"]],["eleve","classe","anneeScolaire"]],
+evaluations:["Évaluations","/api/evaluations",[["libelle","Libellé"],["typeEvaluation","Type","select",["NOTE_CLASSE","NOTE_TRIMESTRIELLE"]],["trimestre","Trimestre","select",["PREMIER","DEUXIEME","TROISIEME"]],["matiere","Matière","rel","/api/matieres"],["classe","Classe","rel","/api/classes"],["anneeScolaire","Année","rel","/api/annees-scolaires"]],["libelle","typeEvaluation","trimestre"]],
+notes:["Notes","/api/notes",[["valeur","Valeur /20","num"],["eleve","Élève","rel","/api/eleves"],["evaluation","Évaluation","rel","/api/evaluations"]],["valeur","eleve","evaluation"]],
+bulletins:["Bulletins","/api/bulletins",[["eleve","Élève","rel","/api/eleves"],["classe","Classe","rel","/api/classes"],["anneeScolaire","Année","rel","/api/annees-scolaires"],["moyenne","Moyenne","num"],["annuel","Annuel","bool"],["trimestre","Trimestre","select",["PREMIER","DEUXIEME","TROISIEME"]]],["eleve","classe","anneeScolaire","moyenne","annuel","trimestre"]],
+absences:["Absences","/api/absences",[["eleve","Élève","rel","/api/eleves"],["date","Date","date"],["justifiee","Justifiée","bool"],["motif","Motif"]],["eleve","date","justifiee","motif"]],
+paiements:["Paiements","/api/paiements",[["eleve","Élève","rel","/api/eleves"],["anneeScolaire","Année","rel","/api/annees-scolaires"],["montant","Montant","num"],["datePaiement","Date","date"],["reference","Référence"]],["eleve","montant","datePaiement","reference"]],
+personnels:["Personnel administratif","/api/personnels-administratifs",[["prenom","Prénom"],["nom","Nom"],["role","Rôle","select",ROLES]],["prenom","nom","role"]],
+cours:["Cours","/api/cours",[["classe","Classe","rel","/api/classes"],["matiere","Matière","rel","/api/matieres"],["enseignant","Enseignant","rel","/api/enseignants"]],["classe","matiere","enseignant"]],
+emplois:["Emplois du temps","/api/emplois-du-temps",[["classe","Classe","rel","/api/classes"],["cours","Cours","rel","/api/cours"],["jour","Jour"],["heureDebut","Heure début"],["heureFin","Heure fin"]],["jour","heureDebut","heureFin"]],
+utilisateurs:["Utilisateurs","/api/utilisateurs",[["username","Nom d'utilisateur"],["email","Email"],["password","Mot de passe"],["role","Rôle","select",ROLES],["actif","Actif","bool"]],["username","email","role","actif"]]
 };
+const user=()=>{try{const t=localStorage.getItem("accessToken");return t?JSON.parse(atob(t.split(".")[1])):null}catch{return null}};
+const text=x=>x==null?"—":typeof x==="object"?(x.nom||x.libelle||x.code||[x.prenom,x.nom].filter(Boolean).join(" ")):String(x);
 
-export default function App() {
-  return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
-  );
-}
+function Login({ok}){const[u,setU]=useState(""),[p,setP]=useState(""),[e,setE]=useState(""),[busy,setBusy]=useState(false);async function go(x){x.preventDefault();if(!u||!p){setE("Nom d'utilisateur et mot de passe obligatoires.");return}setBusy(true);try{const d=await api.post("/auth/login",{username:u,password:p});localStorage.setItem("accessToken",d.accessToken);localStorage.setItem("refreshToken",d.refreshToken);ok()}catch(e){setE(e.message)}finally{setBusy(false)}}return <div className="min-h-screen grid place-items-center bg-slate-100 p-4"><form onSubmit={go} className="w-full max-w-md rounded-3xl bg-white p-8 shadow-xl"><GraduationCap className="mx-auto mb-3 text-indigo-600" size={48}/><h1 className="text-center text-2xl font-bold">Gestion Scolaire</h1><p className="mb-7 text-center text-sm text-slate-500">Connexion au système</p>{e&&<div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{e}</div>}<input className="mb-3 w-full rounded-xl border p-3" placeholder="Nom d'utilisateur" value={u} onChange={x=>setU(x.target.value)}/><input className="mb-5 w-full rounded-xl border p-3" type="password" placeholder="Mot de passe" value={p} onChange={x=>setP(x.target.value)}/><button disabled={busy} className="w-full rounded-xl bg-indigo-600 p-3 font-semibold text-white">{busy?"Connexion...":"Se connecter"}</button></form></div>}
+
+function Nav({view,setView}){const r=user()?.role;const items=[["dashboard","Tableau de bord",LayoutDashboard,ROLES],["eleves","Élèves",GraduationCap,["ADMIN","PROVISEUR","ENSEIGNANT","SURVEILLANT","SECRETAIRE","SCENCEUR"]],["inscriptions","Inscriptions",ClipboardCheck,["ADMIN","PROVISEUR","ENSEIGNANT","SURVEILLANT","SECRETAIRE","SCENCEUR"]],["classes","Classes",BookOpen,["ADMIN","PROVISEUR","ENSEIGNANT","SURVEILLANT","SECRETAIRE","SCENCEUR"]],["annees","Années scolaires",CalendarDays,ROLES],["filieres","Filières",BookMarked,["ADMIN","PROVISEUR","ENSEIGNANT","SECRETAIRE","SCENCEUR"]],["matieres","Matières",BookOpen,["ADMIN","PROVISEUR","ENSEIGNANT","SECRETAIRE","SCENCEUR"]],["enseignants","Enseignants",Users,["ADMIN","PROVISEUR","ENSEIGNANT","SECRETAIRE","SCENCEUR"]],["evaluations","Évaluations",ClipboardCheck,["ADMIN","PROVISEUR","ENSEIGNANT","SCENCEUR"]],["notes","Notes",FileText,["ADMIN","PROVISEUR","ENSEIGNANT","SCENCEUR"]],["bulletins","Bulletins",FileText,["ADMIN","PROVISEUR","ENSEIGNANT","SECRETAIRE","SCENCEUR"]],["decisions","Passage / redoublement",ArrowRightLeft,["ADMIN","PROVISEUR","SECRETAIRE"]],["absences","Absences",CalendarDays,["ADMIN","PROVISEUR","ENSEIGNANT","SURVEILLANT","SCENCEUR"]],["paiements","Paiements",WalletCards,["ADMIN","PROVISEUR","COMPTABLE","SECRETAIRE"]],["personnels","Personnel administratif",UserRoundCog,["ADMIN","PROVISEUR","SECRETAIRE"]],["cours","Cours",BookOpen,["ADMIN","PROVISEUR","ENSEIGNANT","SECRETAIRE","SCENCEUR"]],["emplois","Emplois du temps",CalendarDays,["ADMIN","PROVISEUR","ENSEIGNANT","SECRETAIRE","SCENCEUR","SURVEILLANT"]],["import","Importer une feuille",Upload,["ADMIN","PROVISEUR","ENSEIGNANT"]],["utilisateurs","Utilisateurs",UserRoundCog,["ADMIN"]]];return <aside className="fixed inset-y-0 left-0 z-40 w-72 overflow-y-auto bg-slate-950 text-white"><div className="border-b border-white/10 p-5"><b className="text-xl">Gestion Scolaire</b><div className="mt-1 text-xs text-slate-400">{labels[r]||r}</div></div><nav className="space-y-1 p-3">{items.filter(x=>x[3].includes(r)).map(([id,l,I])=><button key={id} onClick={()=>setView(id)} className={"flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm "+(view===id?"bg-indigo-600":"text-slate-300 hover:bg-white/10")}><I size={18}/>{l}</button>)}</nav><button onClick={()=>{localStorage.clear();location.reload()}} className="m-3 flex items-center gap-3 rounded-xl px-3 py-2.5 text-red-300"><LogOut size={18}/>Déconnexion</button></aside>}
+
+function Header({menu}){const u=user();return <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-white px-4 md:ml-72"><button className="md:hidden" onClick={menu}><Menu/></button><b>Administration scolaire</b><div className="text-right text-sm"><div>{u?.sub}</div><div className="text-xs text-slate-500">{labels[u?.role]||u?.role}</div></div></header>}
+
+function Modal({title,close,children}){return <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"><div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white"><div className="flex justify-between border-b p-5"><b>{title}</b><button onClick={close}>✕</button></div><div className="p-5">{children}</div></div></div>}
+
+function Resource({kind}){const c=R[kind],r=user()?.role,can=A[kind][0].includes(r),canDel=A[kind][1].includes(r);const[data,setData]=useState([]),[opts,setOpts]=useState({}),[q,setQ]=useState(""),[form,setForm]=useState({}),[edit,setEdit]=useState(null),[open,setOpen]=useState(false),[err,setErr]=useState("");async function load(){try{const d=await api.get(c[1]);setData(d);const rel=c[2].filter(f=>f[2]==="rel");const o={};await Promise.all([...new Set(rel.map(f=>f[3]))].map(async ep=>o[ep]=await api.get(ep)));setOpts(o);setErr("")}catch(e){setErr(e.message)}}useEffect(()=>{load()},[kind]);function openForm(x){setEdit(x);const f={};c[2].forEach(a=>{const v=x?.[a[0]];f[a[0]]=a[2]==="rel"?v?.id??"":v??(a[2]==="bool"?false:"")});setForm(f);setOpen(true)}async function save(e){e.preventDefault();const body={};c[2].forEach(a=>{const v=form[a[0]];if(v===""||v===undefined)return;body[a[0]]=a[2]==="rel"?{id:Number(v)}:a[2]==="num"?Number(v):v});try{if(edit)await api.put(c[1]+"/"+edit.id,body);else await api.post(c[1],body);setOpen(false);load()}catch(e){setErr(e.message)}}async function del(id){if(!confirm("Supprimer ?"))return;try{await api.del(c[1]+"/"+id);load()}catch(e){setErr(e.message)}}const shown=data.filter(x=>JSON.stringify(x).toLowerCase().includes(q.toLowerCase()));return <section className="space-y-5"><div className="flex items-center justify-between"><div><h1 className="text-2xl font-bold">{c[0]}</h1><p className="text-sm text-slate-500">Données réelles de l'API Spring Boot.</p></div>{can&&<button onClick={()=>openForm(null)} className="flex gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-white"><Plus size={18}/>Nouveau</button>}</div><input className="w-full rounded-xl border bg-white p-3" placeholder="Rechercher..." value={q} onChange={e=>setQ(e.target.value)}/>{err&&<div className="rounded-xl bg-red-50 p-3 text-red-700">{err}</div>}<div className="overflow-x-auto rounded-2xl border bg-white"><table className="w-full text-sm"><thead className="bg-slate-50"><tr><th className="p-3 text-left">ID</th>{c[3].map(k=><th className="p-3 text-left" key={k}>{k}</th>)}<th className="p-3">Actions</th></tr></thead><tbody>{shown.map(x=><tr className="border-t" key={x.id}><td className="p-3">{x.id}</td>{c[3].map(k=><td className="p-3" key={k}>{text(x[k])}</td>)}<td className="p-3"><div className="flex justify-center gap-1">{can&&<button onClick={()=>openForm(x)}><Pencil size={16}/></button>}{canDel&&<button onClick={()=>del(x.id)} className="text-red-600"><Trash2 size={16}/></button>}{kind==="bulletins"&&<button onClick={async()=>{try{const b=await api.download("/api/bulletins/"+x.id+"/pdf");const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download="bulletin-"+x.id+".pdf";a.click();URL.revokeObjectURL(u)}catch(e){setErr(e.message)}}}><Download size={16}/></button>}</div></td></tr>)}</tbody></table></div>{open&&<Modal title={(edit?"Modifier ":"Nouveau ")+c[0]} close={()=>setOpen(false)}><form onSubmit={save} className="grid gap-4 md:grid-cols-2">{c[2].map(a=><label className="block" key={a[0]}><span className="mb-1 block text-sm font-medium">{a[1]}</span>{a[2]==="rel"||a[2]==="select"?<select className="w-full rounded-xl border p-3" value={form[a[0]]??""} onChange={e=>setForm({...form,[a[0]]:e.target.value})}><option value="">Sélectionner</option>{(a[2]==="rel"?opts[a[3]]||[]:a[3]).map(o=><option key={a[2]==="rel"?o.id:o} value={a[2]==="rel"?o.id:o}>{a[2]==="rel"?text(o):o}</option>)}</select>:a[2]==="bool"?<input type="checkbox" checked={!!form[a[0]]} onChange={e=>setForm({...form,[a[0]]:e.target.checked})}/>:<input type={a[2]||"text"} className="w-full rounded-xl border p-3" value={form[a[0]]??""} onChange={e=>setForm({...form,[a[0]]:e.target.value})}/>}</label>)}<div className="md:col-span-2 flex justify-end gap-3"><button type="button" onClick={()=>setOpen(false)} className="rounded-xl border px-4 py-2">Annuler</button><button className="rounded-xl bg-indigo-600 px-4 py-2 text-white">Enregistrer</button></div></form></Modal>}</section>}
+
+function Dashboard(){const[d,setD]=useState({});const e=[["Élèves","/api/eleves"],["Classes","/api/classes"],["Enseignants","/api/enseignants"],["Matières","/api/matieres"],["Bulletins","/api/bulletins"]];useEffect(()=>{Promise.all(e.map(async x=>{try{return[x[0],(await api.get(x[1])).length]}catch{return[x[0],null]}})).then(x=>setD(Object.fromEntries(x)))},[]);return <section><h1 className="text-2xl font-bold">Tableau de bord</h1><p className="mb-6 text-sm text-slate-500">Synthèse des données accessibles.</p><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">{e.map(x=><div className="rounded-2xl border bg-white p-5 shadow-sm" key={x[0]}><div className="text-3xl font-bold text-indigo-600">{d[x[0]]??"—"}</div><div className="text-sm text-slate-500">{x[0]}</div></div>)}</div></section>}
+
+function Decisions(){const[i,setI]=useState([]),[y,setY]=useState([]),[c,setC]=useState([]),[f,setF]=useState({}),[m,setM]=useState("");useEffect(()=>{Promise.all([api.get("/api/inscriptions"),api.get("/api/annees-scolaires"),api.get("/api/classes")]).then(([a,b,d])=>{setI(a);setY(b);setC(d)}).catch(e=>setM(e.message))},[]);async function go(exceptional){try{const q=new URLSearchParams({nouvelleAnneeId:f.y,classeCibleId:f.c});const p="/api/decisions-scolaires/inscriptions/"+f.i+(exceptional?"/passage-exceptionnel":"/decision");await api.post(p+"?"+q,{});setM("Décision enregistrée.")}catch(e){setM(e.message)}}return <section className="max-w-3xl space-y-5"><h1 className="text-2xl font-bold">Passage / redoublement</h1><p className="text-sm text-slate-500">La règle backend utilise 10/20 : passage si moyenne annuelle ≥ 10, sinon redoublement. La classe cible est toujours choisie manuellement.</p>{m&&<div className="rounded-xl bg-slate-100 p-3">{m}</div>}<div className="space-y-4 rounded-2xl border bg-white p-5">{[[i,"i","Inscription"],[y,"y","Nouvelle année"],[c,"c","Classe cible"]].map(([arr,k,l])=><select key={k} className="w-full rounded-xl border p-3" onChange={e=>setF({...f,[k]:e.target.value})}><option>{l}</option>{arr.map(x=><option key={x.id} value={x.id}>{k==="i"?text(x.eleve)+" — "+x.anneeScolaire?.libelle:k==="c"?x.niveau+" — "+x.nom:x.libelle}</option>)}</select>)}<div className="flex gap-3"><button onClick={()=>go(false)} className="rounded-xl bg-indigo-600 px-4 py-2 text-white">Enregistrer la décision</button>{user()?.role==="PROVISEUR"&&<button onClick={()=>go(true)} className="rounded-xl border border-amber-500 px-4 py-2 text-amber-700">Passage exceptionnel</button>}</div></div></section>}
+
+function Import(){const[file,setFile]=useState(null),[out,setOut]=useState(""),[e,setE]=useState("");async function go(){const f=new FormData();f.append("file",file);try{setOut(await api.post("/api/notes/import",f));setE("")}catch(x){setE(x.message)}}return <section className="max-w-3xl space-y-5"><h1 className="text-2xl font-bold">Importer une feuille de notes</h1><p className="text-sm text-slate-500">JPG/JPEG/PNG, maximum 5 Mo. L'extraction Gemini est affichée pour validation humaine et n'enregistre aucune note automatiquement.</p><div className="rounded-2xl border bg-white p-6 space-y-4"><input type="file" accept="image/jpeg,image/png" onChange={e=>setFile(e.target.files?.[0]||null)}/><button disabled={!file} onClick={go} className="rounded-xl bg-indigo-600 px-4 py-2 text-white disabled:opacity-50">Analyser</button>{e&&<div className="rounded-xl bg-red-50 p-3 text-red-700">{e}</div>}{out&&<pre className="overflow-auto rounded-xl bg-slate-950 p-4 text-sm text-white">{out}</pre>}</div></section>}
+
+export default function App(){const[ok,setOk]=useState(!!localStorage.getItem("accessToken"));const[v,setV]=useState("dashboard");const[mobile,setMobile]=useState(false);if(!ok)return <Login ok={()=>setOk(true)}/>;return <div className="min-h-screen bg-slate-50"><div className={mobile?"block":"hidden md:block"}><Nav view={v} setView={x=>{setV(x);setMobile(false)}}/></div><Header menu={()=>setMobile(!mobile)}/><main className="p-4 md:ml-72 md:p-6">{v==="dashboard"?<Dashboard/>:v==="decisions"?<Decisions/>:v==="import"?<Import/>:<Resource kind={v}/>}</main></div>}
