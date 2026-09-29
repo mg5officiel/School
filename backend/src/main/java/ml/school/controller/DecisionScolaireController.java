@@ -11,14 +11,35 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class DecisionScolaireController {
 
-    private final DecisionScolaireService decisionScolaireService;
+    private final DecisionScolaireService service;
+
+    @PostMapping("/inscriptions/{inscriptionId}/decision")
+    @PreAuthorize("hasAnyRole('ADMIN','PROVISEUR','SECRETAIRE')")
+    public Inscription enregistrerDecision(
+            @PathVariable Long inscriptionId,
+            @RequestParam Long nouvelleAnneeId,
+            @RequestParam Long classeCibleId,
+            org.springframework.security.core.Authentication authentication) {
+
+        return service.enregistrerDecisionAutomatique(
+                inscriptionId,
+                nouvelleAnneeId,
+                classeCibleId,
+                authentication.getName());
+    }
 
     @PostMapping("/inscriptions/{inscriptionId}/passage-exceptionnel")
     @PreAuthorize("hasRole('PROVISEUR')")
     public Inscription autoriserPassageExceptionnel(
             @PathVariable Long inscriptionId,
+            @RequestParam Long nouvelleAnneeId,
+            @RequestParam Long classeCibleId,
             org.springframework.security.core.Authentication authentication) {
-        return decisionScolaireService.autoriserPassageExceptionnel(
-                inscriptionId, authentication.getName());
+
+        return service.autoriserPassageExceptionnel(
+                inscriptionId,
+                nouvelleAnneeId,
+                classeCibleId,
+                authentication.getName());
     }
 }
