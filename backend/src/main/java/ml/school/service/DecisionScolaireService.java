@@ -5,6 +5,7 @@ import ml.school.entity.Bulletin;
 import ml.school.entity.Inscription;
 import ml.school.repository.BulletinRepository;
 import ml.school.repository.InscriptionRepository;
+import ml.school.audit.AuditService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
