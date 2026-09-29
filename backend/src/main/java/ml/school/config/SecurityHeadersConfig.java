@@ -1,0 +1,2 @@
+package ml.school.config; import org.springframework.context.annotation.*; import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+@Configuration public class SecurityHeadersConfig { @Bean org.springframework.boot.CommandLineRunner securityNotice(){return args->{};} }
