@@ -27,47 +27,27 @@ public class DecisionScolaireService {
     private final ClasseRepository classeRepository;
     private final AuditService auditService;
 
-    /**
-     * Détermine uniquement le résultat scolaire selon la moyenne.
-     * La classe de l'année suivante est toujours choisie manuellement.
-     */
     public boolean estAdmisParDefaut(Bulletin bulletin) {
         return bulletin.getMoyenne().compareTo(SEUIL_PASSAGE) >= 0;
     }
 
     @Transactional
     public Inscription enregistrerDecisionAutomatique(
-            Long inscriptionId,
-            Long nouvelleAnneeId,
-            Long classeCibleId,
-            String username) {
+            Long inscriptionId, Long nouvelleAnneeId, Long classeCibleId, String username) {
 
         Inscription inscriptionActuelle = chargerInscription(inscriptionId);
         Bulletin bulletin = chargerBulletinAnnuel(inscriptionActuelle);
-
         boolean passage = estAdmisParDefaut(bulletin);
 
         return creerInscriptionSuivante(
-                inscriptionActuelle,
-                nouvelleAnneeId,
-                classeCibleId,
-                !passage,
-                username,
+                inscriptionActuelle, nouvelleAnneeId, classeCibleId, !passage, username,
                 passage ? "PASSAGE_AUTOMATIQUE" : "REDOUBLEMENT_AUTOMATIQUE",
-                "Décision basée sur la moyenne annuelle de " + bulletin.getMoyenne() + "/20"
-        );
+                "Décision basée sur la moyenne annuelle de " + bulletin.getMoyenne() + "/20");
     }
 
-    /**
-     * Le proviseur peut faire passer un élève dont la moyenne est inférieure à 10/20.
-     * La classe cible reste choisie manuellement.
-     */
     @Transactional
     public Inscription autoriserPassageExceptionnel(
-            Long inscriptionId,
-            Long nouvelleAnneeId,
-            Long classeCibleId,
-            String username) {
+            Long inscriptionId, Long nouvelleAnneeId, Long classeCibleId, String username) {
 
         Inscription inscriptionActuelle = chargerInscription(inscriptionId);
         Bulletin bulletin = chargerBulletinAnnuel(inscriptionActuelle);
@@ -78,15 +58,10 @@ public class DecisionScolaireService {
         }
 
         return creerInscriptionSuivante(
-                inscriptionActuelle,
-                nouvelleAnneeId,
-                classeCibleId,
-                false,
-                username,
+                inscriptionActuelle, nouvelleAnneeId, classeCibleId, false, username,
                 "PASSAGE_EXCEPTIONNEL",
                 "Passage autorisé par le proviseur malgré une moyenne de "
-                        + bulletin.getMoyenne() + "/20"
-        );
+                        + bulletin.getMoyenne() + "/20");
     }
 
     private Inscription chargerInscription(Long id) {
@@ -96,27 +71,15 @@ public class DecisionScolaireService {
 
     private Bulletin chargerBulletinAnnuel(Inscription inscription) {
         Bulletin bulletin = bulletinRepository
-                .findByEleveAndAnneeScolaire(
-                        inscription.getEleve(),
-                        inscription.getAnneeScolaire())
+                .findByEleveAndAnneeScolaireAndAnnuelTrue(
+                        inscription.getEleve(), inscription.getAnneeScolaire())
                 .orElseThrow(() -> new IllegalArgumentException("Bulletin annuel introuvable"));
-
-        if (!bulletin.isAnnuel()) {
-            throw new IllegalArgumentException(
-                    "La décision de passage ou de redoublement exige un bulletin annuel");
-        }
-
         return bulletin;
     }
 
     private Inscription creerInscriptionSuivante(
-            Inscription inscriptionActuelle,
-            Long nouvelleAnneeId,
-            Long classeCibleId,
-            boolean redoublant,
-            String username,
-            String action,
-            String details) {
+            Inscription inscriptionActuelle, Long nouvelleAnneeId, Long classeCibleId,
+            boolean redoublant, String username, String action, String details) {
 
         AnneeScolaire nouvelleAnnee = anneeScolaireRepository.findById(nouvelleAnneeId)
                 .orElseThrow(() -> new IllegalArgumentException("Nouvelle année scolaire introuvable"));
@@ -143,11 +106,9 @@ public class DecisionScolaireService {
                 action,
                 username,
                 "Eleve#" + inscriptionActuelle.getEleve().getId(),
-                details
-                        + "; année=" + nouvelleAnnee.getLibelle()
+                details + "; année=" + nouvelleAnnee.getLibelle()
                         + "; classe choisie manuellement=" + classeCible.getNom()
-                        + "; redoublant=" + redoublant
-        );
+                        + "; redoublant=" + redoublant);
 
         return saved;
     }
